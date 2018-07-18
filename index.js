@@ -10,7 +10,7 @@ bot.on('ready', () => {
 
 bot.on('message', msg => {
   // Ignore other bots
-  if (message.author.bot) return;
+  if (msg.author.bot) return;
 
   if (msg.content === 'ping') {
     msg.reply('pong');
