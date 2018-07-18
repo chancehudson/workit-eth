@@ -8,13 +8,16 @@ bot.on('ready', () => {
   console.log(`Logged in as ${bot.user.tag}!`);
 });
 
-bot.on('message', msg => {
+
+bot.on('message', (msg: Discord.Message) => {
   // Ignore other bots
   if (msg.author.bot) return;
 
   if (msg.content === 'ping') {
-    msg.reply('pong');
+    return msg.reply('pong');
   }
+
+  msg.channel.send(`What's up bitch`);
 });
 
 bot.login(process.env.BOT_TOKEN);
