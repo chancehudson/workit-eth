@@ -10,5 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^11.3.2"
+  },
+  "devDependencies": {
+    "flow-bin": "^0.76.0"
   }
 }

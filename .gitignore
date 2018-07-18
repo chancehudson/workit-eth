@@ -5,3 +5,4 @@
 *.key
 
 node_modules/
+flow-typed/
