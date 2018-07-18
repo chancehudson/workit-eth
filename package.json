@@ -4,6 +4,7 @@
   "description": "A bot for tracking workouts",
   "main": "index.js",
   "scripts": {
+    "postinstall": "flow-typed install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Chance Hudson",
