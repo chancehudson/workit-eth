@@ -6,7 +6,8 @@
   "scripts": {
     "postinstall": "flow-typed install",
     "build": "babel -d build src",
-    "start": "npm run build && node build/index"
+    "start": "npm run build && node build/index",
+    "start:background": "npm start 2>> bot.log &"
   },
   "author": "Chance Hudson",
   "license": "MIT",
