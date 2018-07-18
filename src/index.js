@@ -5,7 +5,8 @@ const Discord = require('discord.js');
 const bot = new Discord.Client();
 const invariant = require('invariant');
 const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.200:8545'));
+invariant(process.env.RPC_URL, 'No web3 rpc url supplied')
+const web3 = new Web3(new Web3.providers.HttpProvider(`http://${process.env.RPC_URL}:8545`));
 
 bot.on('ready', () => {
   console.log(`Logged in as ${bot.user.tag}!`);
