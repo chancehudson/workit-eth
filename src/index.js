@@ -17,8 +17,6 @@ bot.on('message', (msg: Discord.Message) => {
   if (msg.content === 'ping') {
     return msg.reply('pong');
   }
-
-  msg.channel.send(`What's up bitch`);
 });
 
 invariant(process.env.BOT_TOKEN, 'No bot token supplied in env file');
