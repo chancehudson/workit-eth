@@ -2,7 +2,7 @@
   "name": "workit-bot",
   "version": "0.0.1",
   "description": "A bot for tracking workouts",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "postinstall": "flow-typed install",
     "build": "babel -d build src",
