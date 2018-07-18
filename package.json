@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "flow-typed install",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "babel -d build src",
+    "start": "npm run build && node build/index"
   },
   "author": "Chance Hudson",
   "license": "MIT",
@@ -14,6 +15,8 @@
     "dotenv": "^6.0.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-flow-strip-types": "^6.22.0",
     "flow-bin": "^0.76.0"
   }
 }
