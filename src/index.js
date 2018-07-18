@@ -19,16 +19,12 @@ bot.on('message', (msg: Discord.Message) => {
 
   if (msg.content === 'ping') {
     return msg.reply('pong');
-  }
-
-  if (msg.content === 'help') {
+  } else if (msg.content === 'help') {
     return msg.reply(`
       Usage:
         register [address] - registers an ethereum address to your username
     `);
-  }
-
-  if (registerRegex.test(msg.content)) {
+  } else if (registerRegex.test(msg.content)) {
     const match = msg.content.match(registerRegex);
     if (match === null) return;
     invariant(match, 'matched address is null or undefined');
