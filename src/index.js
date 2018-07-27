@@ -37,7 +37,7 @@ bot.on('message', async (msg: Discord.Message) => {
     const attachment = msg.attachments.array()[0];
     if (attachment.message.content.indexOf(bot.user.id) !== -1) {
       const uploaded = await uploadUrlToIPFS(msg.attachments.array()[0].url);
-      return msg.reply(`Uploaded image to IPFS at ${uploaded.path}`);
+      return msg.reply(`Uploaded image to IPFS at ${uploaded.path}\nYou can view this in a browser at https://ipfs.io/ipfs/${uploaded.path}`);
     }
   }
 
@@ -67,9 +67,9 @@ bot.on('message', async (msg: Discord.Message) => {
         value: web3.utils.toWei('0.2')
       };
       const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+      msg.reply(`I've generated a transaction and am sending it. I'll message you when the transaction is complete.`);
       const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
-      console.log(receipt);
-      return msg.reply(JSON.stringify(receipt));
+      return msg.reply(`Transaction complete, view at https://rinkeby.etherscan.io/tx/${receipt.transactionHash}`);
     case 'balance':
       if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
       const _account = await getAccountForUser(msg.author);
