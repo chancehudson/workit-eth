@@ -6,6 +6,9 @@ const _ = require('lodash');
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const invariant = require('invariant');
+const IPFS = require('ipfs');
+const node = new IPFS();
+const axios = require('axios');
 const Web3 = require('web3');
 invariant(process.env.RPC_URL, 'No web3 rpc url supplied')
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
@@ -21,6 +24,8 @@ bot.on('ready', () => {
   console.log(`Logged in as ${bot.user.tag}!`);
 });
 
+node.on('error', err => console.log('Error from IFPS', err));
+
 const registerRegex = /register ([a-zA-Z0-9]*)/;
 const buyRegex = /buy\s*(\d*)\s*tokens/i;
 
@@ -28,6 +33,13 @@ bot.on('message', async (msg: Discord.Message) => {
   // Ignore other bots
   if (msg.author.bot) return;
 
+  if (msg.attachments.array().length) {
+    const attachment = msg.attachments.array()[0];
+    if (attachment.message.content.indexOf(bot.user.id) !== -1) {
+      const uploaded = await uploadUrlToIPFS(msg.attachments.array()[0].url);
+      return msg.reply(`Uploaded image to IPFS at ${uploaded.path}`);
+    }
+  }
 
   switch (msg.content) {
     case 'ping':
@@ -102,6 +114,15 @@ async function getAccountForUser(user: Discord.User) {
   if (!addressMessage) throw new Error('No address found');
   const privateKey = addressMessage.content.match(privateKeyRegex)[0];
   return web3.eth.accounts.privateKeyToAccount(privateKey);
+}
+
+async function uploadUrlToIPFS(url: string) {
+  const result = await axios.get(url, {
+    responseType: 'arraybuffer'
+  });
+  const buffer = Buffer.from(result.data, 'binary');
+  const files = await node.files.add(buffer);
+  return files[0];
 }
 
 invariant(process.env.BOT_TOKEN, 'No bot token supplied in env file');
