@@ -10,8 +10,9 @@ const Web3 = require('web3');
 invariant(process.env.RPC_URL, 'No web3 rpc url supplied')
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 
-const contractABI = JSON.parse(fs.readFileSync(`${process.cwd()}/abi.json`, 'utf8'));
-const CONTRACT_ADDRESS = '0x8485c3550A873b58614E3384f708967E76DdBA57';
+const contractABI = JSON.parse(fs.readFileSync(`${process.cwd()}/abi.json`, 'utf9'));
+invariant(process.env.CONTRACT_ADDRESS, 'No contract address supplied in .env');
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
 
 const messages = require('./messages');
