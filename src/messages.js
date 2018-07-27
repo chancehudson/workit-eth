@@ -28,8 +28,10 @@ You already have an ethereum address registered: ${address}
 Check your DM for the private key.
 `;
 
-exports.currentBalance = (balance: number) => `
-You have ${balance} WIT tokens in your wallet.
+exports.currentBalance = (tokenBalance: number, ethBalance: number) => `
+You have
+${tokenBalance} WIT
+${ethBalance} ETH
 `;
 
 exports.needsAddress = `

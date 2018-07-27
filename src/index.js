@@ -10,7 +10,7 @@ const Web3 = require('web3');
 invariant(process.env.RPC_URL, 'No web3 rpc url supplied')
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 
-const contractABI = JSON.parse(fs.readFileSync(`${process.cwd()}/abi.json`, 'utf9'));
+const contractABI = JSON.parse(fs.readFileSync(`${process.cwd()}/abi.json`, 'utf8'));
 invariant(process.env.CONTRACT_ADDRESS, 'No contract address supplied in .env');
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
@@ -61,8 +61,10 @@ bot.on('message', async (msg: Discord.Message) => {
     case 'balance':
       if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
       const _account = await getAccountForUser(msg.author);
-      const balance = await contract.methods.balanceOf(_account.address).call();
-      return msg.reply(messages.currentBalance(balance))
+      const tokenBalance = await contract.methods.balanceOf(_account.address).call();
+      const weiBalance = await web3.eth.getBalance(_account.address);
+      const ethBalance = web3.utils.fromWei(weiBalance);
+      return msg.reply(messages.currentBalance(tokenBalance, ethBalance))
     case 'account':
       if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
       return msg.reply((await getAccountForUser(msg.author)).address);
