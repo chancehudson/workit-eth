@@ -4,11 +4,11 @@ exports.help = `
 Usage:
   ping: pong!
 
-  buy (number) tokens: Initiates a purchase for number of tokens. Use it like 'buy 10 tokens'.
+  account : Generate account or load account and show balance.
 
-  account: Generate account or load account and show balance.
-
-  register: Register to work it.
+  register (days) (ether) : Register to work it for a certain number of days per week using a certain amount of ethereum.
+    Example use: register 5 0.5
+    ^ Registers for 5 days of exercise per week with 0.5 ether
 `;
 
 exports.generatedAddress = (address: string) => `
