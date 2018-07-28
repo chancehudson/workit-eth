@@ -57,7 +57,7 @@ bot.on('message', async (msg: Discord.Message) => {
       const tokenBalance = await contract.methods.balanceOf(_account.address).call();
       const weiBalance = await web3.eth.getBalance(_account.address);
       const ethBalance = web3.utils.fromWei(weiBalance);
-      return msg.reply(messages.currentBalance(_account.address, tokenBalance, ethBalance));
+      return msg.reply(messages.currentBalance(_account.address, await getEtherscanUrl(), tokenBalance, ethBalance));
     default:
       break;
   }

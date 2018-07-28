@@ -26,8 +26,10 @@ This is your private key: ${privateKey}
 Make sure to keep it a secret, you can use it here: https://www.myetherwallet.com/#send-transaction
 `;
 
-exports.currentBalance = (address: string, tokenBalance: number, ethBalance: number) => `
+exports.currentBalance = (address: string, etherscanUrl, tokenBalance: number, ethBalance: number) => `
 Your address is ${address}
+
+View on etherscan: ${etherscanUrl}/address/${address}
 
 You have:
 ${tokenBalance} WIT
