@@ -46,10 +46,6 @@ bot.on('message', async (msg: Discord.Message) => {
       return msg.reply('pong');
     case 'help':
       return msg.reply(messages.help);
-    case 'register':
-      if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
-      const account = await getAccountForUser(msg.author);
-
     case 'account':
       if (!await userHasAddress(msg.author)) {
         const key = web3.eth.accounts.create();
