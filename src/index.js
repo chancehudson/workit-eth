@@ -46,15 +46,6 @@ bot.on('message', async (msg: Discord.Message) => {
       return msg.reply('pong');
     case 'help':
       return msg.reply(messages.help);
-    case 'generateAddress':
-      if (await userHasAddress(msg.author)) {
-        const account = await getAccountForUser(msg.author);
-        return msg.reply(messages.alreadyHasAddress(account.address));
-      }
-      const key = web3.eth.accounts.create();
-      msg.reply(messages.generatedAddress(key.address));
-      const dm = await userDM(msg.author);
-      return dm.send(messages.generatedAddressDM(key.address, key.privateKey));
     case 'register':
       if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
       const account = await getAccountForUser(msg.author);
@@ -69,17 +60,19 @@ bot.on('message', async (msg: Discord.Message) => {
       const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
       msg.reply(`I've generated a transaction and am sending it. I'll message you when the transaction is complete.`);
       const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
-      return msg.reply(`Transaction complete, view at https://rinkeby.etherscan.io/tx/${receipt.transactionHash}`);
-    case 'balance':
-      if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
+      return msg.reply(`Transaction complete, view at ${await getEtherscanUrl()}/${receipt.transactionHash}`);
+    case 'account':
+      if (!await userHasAddress(msg.author)) {
+        const key = web3.eth.accounts.create();
+        msg.reply(messages.generatedAddress(key.address));
+        const dm = await userDM(msg.author);
+        dm.send(messages.generatedAddressDM(key.address, key.privateKey));
+      }
       const _account = await getAccountForUser(msg.author);
       const tokenBalance = await contract.methods.balanceOf(_account.address).call();
       const weiBalance = await web3.eth.getBalance(_account.address);
       const ethBalance = web3.utils.fromWei(weiBalance);
-      return msg.reply(messages.currentBalance(tokenBalance, ethBalance))
-    case 'account':
-      if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
-      return msg.reply((await getAccountForUser(msg.author)).address);
+      return msg.reply(messages.currentBalance(tokenBalance, ethBalance));
     default:
       break;
   }
@@ -123,6 +116,17 @@ async function uploadUrlToIPFS(url: string) {
   const buffer = Buffer.from(result.data, 'binary');
   const files = await node.files.add(buffer);
   return files[0];
+}
+
+async function getEtherscanUrl() {
+  const networkId = await web3.eth.net.getId();
+  if (networkId === 4) {
+    return `https://rinkeby.etherscan.io`;
+  } else if (networkId === 1) {
+    return `https://etherscan.io`;
+  } else {
+    invariant(false, `Unsupported networkId received "${networkId}"`);
+  }
 }
 
 invariant(process.env.BOT_TOKEN, 'No bot token supplied in env file');
