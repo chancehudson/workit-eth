@@ -45,7 +45,7 @@ bot.on('message', async (msg: Discord.Message) => {
     case 'ping':
       return msg.reply('pong');
     case 'help':
-      return msg.reply(messages.help);
+      return msg.reply(messages.help(CONTRACT_ADDRESS, `${await getEtherscanUrl()}/address/${CONTRACT_ADDRESS}`));
     case 'account':
       if (!await userHasAddress(msg.author)) {
         const key = web3.eth.accounts.create();

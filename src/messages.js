@@ -1,14 +1,18 @@
 // @flow
 
-exports.help = `
+exports.help = (contractAddress: string, contractUrl: string) => `
+Contract address: ${contractAddress}
+
+View on etherscan: ${contractUrl}
+
 Usage:
   ping: pong!
 
   account : Generate account or load account and show balance.
 
   register (days) (ether) : Register to work it for a certain number of days per week using a certain amount of ethereum.
-    Example use: register 5 0.5
-    ^ Registers for 5 days of exercise per week with 0.5 ether
+    Example use: "register 5 0.5"
+    Registers for 5 days of exercise per week with 0.5 ether
 `;
 
 exports.generatedAddress = (address: string) => `
