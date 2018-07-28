@@ -68,7 +68,7 @@ bot.on('message', async (msg: Discord.Message) => {
     const days = matchResults[1];
     const ether = matchResults[2];
     if (Number(days) < 3) {
-      return msg.reply(`You have to sign up for more than 3 days per week.`);
+      return msg.reply(`You have to sign up for 3 or more days per week.`);
     } else if (Number(days) > 7) {
       return msg.reply(`You can't register for more than 7 days per week.`);
     }
@@ -82,11 +82,15 @@ bot.on('message', async (msg: Discord.Message) => {
       return msg.reply(`You only have ${ethBalance} eth available.`);
     }
 
+    const estimatedGas = await contract.methods.register(days).estimateGas({
+      from: account.address,
+      value: web3.utils.toWei(`${ether}`)
+    });
     const tx = {
       from: account.address,
       to: CONTRACT_ADDRESS,
       data: contract.methods.register(days).encodeABI(),
-      gas: '300000',
+      gas: estimatedGas,
       gasPrice: web3.utils.toWei('1', 'gwei'),
       value: web3.utils.toWei(`${ether}`)
     };
