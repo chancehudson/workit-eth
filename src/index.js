@@ -24,7 +24,7 @@ bot.on('ready', () => {
   console.log(`Logged in as ${bot.user.tag}!`);
 });
 
-node.on('error', err => console.log('Error from IFPS', err));
+node.on('error', err => console.log('Error from IPFS', err));
 
 const registerRegex = /register\s+([0-9])\s+(\d*\.?\d*)/i;
 const buyRegex = /buy\s*(\d*)\s*tokens/i;
@@ -123,7 +123,9 @@ async function getAccountForUser(user: Discord.User) {
   const privateKeyRegex = /0x[0-9a-fA-F]{64}/m;
   const addressMessage = _.find(messages.array(), message => privateKeyRegex.test(message.content));
   if (!addressMessage) throw new Error('No address found');
-  const privateKey = addressMessage.content.match(privateKeyRegex)[0];
+  const match = addressMessage.content.match(privateKeyRegex);
+  invariant(match && match.length >= 1, 'No private key found in content.');
+  const privateKey = match[0];
   return web3.eth.accounts.privateKeyToAccount(privateKey);
 }
 
