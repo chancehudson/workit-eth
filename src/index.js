@@ -26,7 +26,7 @@ bot.on('ready', () => {
 
 node.on('error', err => console.log('Error from IFPS', err));
 
-const registerRegex = /register ([a-zA-Z0-9]*)/;
+const registerRegex = /register\s+([0-9])\s+(\d*\.?\d*)/i;
 const buyRegex = /buy\s*(\d*)\s*tokens/i;
 
 bot.on('message', async (msg: Discord.Message) => {
@@ -49,18 +49,7 @@ bot.on('message', async (msg: Discord.Message) => {
     case 'register':
       if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
       const account = await getAccountForUser(msg.author);
-      const tx = {
-        from: account.address,
-        to: CONTRACT_ADDRESS,
-        data: contract.methods.register(3).encodeABI(),
-        gas: '300000',
-        gasPrice: web3.utils.toWei('1', 'gwei'),
-        value: web3.utils.toWei('0.2')
-      };
-      const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
-      msg.reply(`I've generated a transaction and am sending it. I'll message you when the transaction is complete.`);
-      const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
-      return msg.reply(`Transaction complete, view at ${await getEtherscanUrl()}/${receipt.transactionHash}`);
+
     case 'account':
       if (!await userHasAddress(msg.author)) {
         const key = web3.eth.accounts.create();
@@ -76,11 +65,40 @@ bot.on('message', async (msg: Discord.Message) => {
     default:
       break;
   }
-  // if (buyRegex.test(msg.content)) {
-  //   const tokenCount = msg.content.match(buyRegex)[1];
-  // } else if (msg.content === 'balance') {
-  //
-  // }
+
+  if (registerRegex.test(msg.content)) {
+    const matchResults = msg.content.match(registerRegex);
+    invariant(matchResults && matchResults.length >= 3, 'Invalid match');
+    const days = matchResults[1];
+    const ether = matchResults[2];
+    if (Number(days) < 3) {
+      return msg.reply(`You have to sign up for more than 3 days per week.`);
+    } else if (Number(days) > 7) {
+      return msg.reply(`You can't register for more than 7 days per week.`);
+    }
+    if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
+    const account = await getAccountForUser(msg.author);
+    const weiBalance = await web3.eth.getBalance(account.address);
+    const ethBalance = web3.utils.fromWei(weiBalance);
+    if (Number(ether) < 0.2) {
+      return msg.reply(`You have to register with more than 0.2 eth.`);
+    } else if (Number(ether) >= ethBalance) {
+      return msg.reply(`You only have ${ethBalance} eth available.`);
+    }
+
+    const tx = {
+      from: account.address,
+      to: CONTRACT_ADDRESS,
+      data: contract.methods.register(days).encodeABI(),
+      gas: '300000',
+      gasPrice: web3.utils.toWei('1', 'gwei'),
+      value: web3.utils.toWei(`${ether}`)
+    };
+    const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+    msg.reply(`I've generated a transaction and am sending it. I'll message you when the transaction is complete.`);
+    const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
+    return msg.reply(`Transaction complete, view at ${await getEtherscanUrl()}/tx/${receipt.transactionHash}`);
+  }
 });
 
 async function userDM(user: Discord.User) {
