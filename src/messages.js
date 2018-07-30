@@ -26,7 +26,7 @@ This is your private key: ${privateKey}
 Make sure to keep it a secret, you can use it here: https://www.myetherwallet.com/#send-transaction
 `;
 
-exports.currentBalance = (address: string, etherscanUrl, tokenBalance: number, ethBalance: number) => `
+exports.currentBalance = (address: string, etherscanUrl: string, tokenBalance: number, ethBalance: number) => `
 Your address is ${address}
 
 View on etherscan: ${etherscanUrl}/address/${address}
@@ -39,3 +39,15 @@ ${ethBalance} ETH
 exports.needsAddress = `
 You don't seem to have an address. You can generate one by typing 'generateAddress'.
 `;
+
+exports.imageUploaded = (ipfsUrl: string) => `
+Uploaded image to IPFS, view at ${ipfsUrl}
+
+Sending proof transaction...
+`;
+
+exports.proofConfirmed = (etherscanUrl: string, txId: string) => `
+Your proof has been uploaded, you can view the transaction here:
+
+https://${etherscanUrl}/tx/${txId}
+`

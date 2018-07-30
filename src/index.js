@@ -17,6 +17,12 @@ const contractABI = JSON.parse(fs.readFileSync(`${process.cwd()}/abi.json`, 'utf
 invariant(process.env.CONTRACT_ADDRESS, 'No contract address supplied in .env');
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
+//
+// contract.events.Log((err: any, event: any) => {
+//   console.log(err);
+//   if (!event) return;
+//   console.log(event);
+// });
 
 const messages = require('./messages');
 
@@ -26,18 +32,44 @@ bot.on('ready', () => {
 
 node.on('error', err => console.log('Error from IPFS', err));
 
-const registerRegex = /register\s+([0-9])\s+(\d*\.?\d*)/i;
-const buyRegex = /buy\s*(\d*)\s*tokens/i;
+const registerRegex = /register\s+([0-9])\s+(\d+)/i;
+const buyRegex = /buy\s+(\d+)\s+tokens/i;
 
 bot.on('message', async (msg: Discord.Message) => {
   // Ignore other bots
   if (msg.author.bot) return;
 
+  // Upload proof
   if (msg.attachments.array().length) {
     const attachment = msg.attachments.array()[0];
     if (attachment.message.content.indexOf(bot.user.id) !== -1) {
+      if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
       const uploaded = await uploadUrlToIPFS(msg.attachments.array()[0].url);
-      return msg.reply(`Uploaded image to IPFS at ${uploaded.path}\nYou can view this in a browser at https://ipfs.io/ipfs/${uploaded.path}`);
+      msg.reply(messages.imageUploaded(`https://ipfs.io/ipfs/${uploaded.path}`));
+      const account = await getAccountForUser(msg.author);
+      const weiBalance = await web3.eth.getBalance(account.address);
+      const ethBalance = web3.utils.fromWei(weiBalance);
+
+      // const estimatedGas = await contract.methods.postProof(uploaded.path).estimateGas({
+      //   from: account.address
+      // });
+      const tx = {
+        from: account.address,
+        to: CONTRACT_ADDRESS,
+        data: contract.methods.postProof(uploaded.path).encodeABI(),
+        gas: 300000,
+        gasPrice: web3.utils.toWei('1', 'gwei')
+      };
+      const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+      const activeTx = web3.eth.sendSignedTransaction(signed.rawTransaction);
+      activeTx.once('confirmation', async (confirmationNumber: number, receipt: any) => {
+        if (!receipt.status) return;
+        msg.reply(messages.proofConfirmed(await getEtherscanUrl(), receipt.transactionHash));
+      });
+      activeTx.catch(err => {
+        msg.reply(`There was an error posting your proof to the contract.\n${err}`);
+      });
+      return;
     }
   }
 
@@ -66,7 +98,7 @@ bot.on('message', async (msg: Discord.Message) => {
     const matchResults = msg.content.match(registerRegex);
     invariant(matchResults && matchResults.length >= 3, 'Invalid match');
     const days = matchResults[1];
-    const ether = matchResults[2];
+    const tokens = matchResults[2];
     if (Number(days) < 3) {
       return msg.reply(`You have to sign up for 3 or more days per week.`);
     } else if (Number(days) > 7) {
@@ -74,30 +106,60 @@ bot.on('message', async (msg: Discord.Message) => {
     }
     if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
     const account = await getAccountForUser(msg.author);
-    const weiBalance = await web3.eth.getBalance(account.address);
-    const ethBalance = web3.utils.fromWei(weiBalance);
-    if (Number(ether) < 0.2) {
-      return msg.reply(`You have to register with more than 0.2 eth.`);
-    } else if (Number(ether) >= ethBalance) {
-      return msg.reply(`You only have ${ethBalance} eth available.`);
-    }
-
-    const estimatedGas = await contract.methods.register(days).estimateGas({
+    // const estimatedGas = await contract.methods.commitToWeek(days, tokens).estimateGas({
+    //   from: account.address
+    // });
+    const tx = {
       from: account.address,
-      value: web3.utils.toWei(`${ether}`)
+      to: CONTRACT_ADDRESS,
+      data: contract.methods.commitToWeek(tokens, days).encodeABI(),
+      gas: 300000,
+      gasPrice: web3.utils.toWei('1', 'gwei')
+    };
+    const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+    msg.reply(`I've generated a transaction and am sending it. I'll message you when the transaction is complete.`);
+    const activeTx = web3.eth.sendSignedTransaction(signed.rawTransaction);
+    activeTx.once('confirmation', async (confirmationNumber: number, receipt: any) => {
+      if (!receipt.status) return;
+      msg.reply(`You've been registered for ${days} days of activity this week.\nYou staked ${tokens} WIT tokens on completing this goal.\n\nView transaction here: ${await getEtherscanUrl()}/tx/${receipt.transactionHash}`);
+    });
+    activeTx.catch(err => msg.reply(`There was a problem registering you: ${err}`));
+    return;
+  } else if (buyRegex.test(msg.content)) {
+    const matchResults = msg.content.match(buyRegex);
+    invariant(matchResults && matchResults.length >= 2, 'Invalid match');
+    const tokens = Number(matchResults[1]);
+    if (isNaN(tokens)) return msg.reply('I received NaN for your token count...');
+    if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
+    const account = await getAccountForUser(msg.author);
+    const weiBalance = await web3.eth.getBalance(account.address);
+    const weiPerToken = await contract.methods.weiPerToken.call().call();
+    if (weiBalance < weiPerToken * tokens) {
+      msg.reply(`You don't have enough ether to purchase these tokens. Send some to your address.`);
+      return;
+    }
+    const estimatedGas = await contract.methods.buyTokens(`${tokens}`).estimateGas({
+      from: account.address,
+      value: tokens * weiPerToken
     });
     const tx = {
       from: account.address,
       to: CONTRACT_ADDRESS,
-      data: contract.methods.register(days).encodeABI(),
-      gas: estimatedGas,
+      value: tokens * weiPerToken,
+      data: contract.methods.buyTokens(`${tokens}`).encodeABI(),
       gasPrice: web3.utils.toWei('1', 'gwei'),
-      value: web3.utils.toWei(`${ether}`)
+      gas: estimatedGas
     };
     const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
-    msg.reply(`I've generated a transaction and am sending it. I'll message you when the transaction is complete.`);
-    const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
-    return msg.reply(`Transaction complete, view at ${await getEtherscanUrl()}/tx/${receipt.transactionHash}`);
+    const activeTx = web3.eth.sendSignedTransaction(signed.rawTransaction);
+    msg.reply(`Broadcasting transaction, I'll ping you when it's confirmed.`);
+    activeTx.once('confirmation', (confirmationNumber: number, receipt: any) => {
+      if (!receipt.status) return;
+      msg.reply(`Your purchase of ${tokens} tokens has been processed. Type "account" to see your current balances.`);
+    });
+    activeTx.catch(err => {
+      msg.reply(`There was a problem processing your purchase: ${err}`);
+    });
   }
 });
 
