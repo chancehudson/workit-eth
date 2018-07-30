@@ -60,13 +60,14 @@ contract WorkIt is ERC20Interface {
   struct weekCommittment {
     uint daysCompleted;
     uint daysCommitted;
-    uint[] workoutProofs;
+    mapping(uint => uint) workoutProofs;
     uint tokensCommitted;
     uint tokensEarned;
     bool tokensPaid;
   }
 
   struct weekData {
+    bool initialized;
     uint totalPeopleCompleted;
     uint totalPeople;
     uint totalTokensCompleted;
@@ -81,7 +82,7 @@ contract WorkIt is ERC20Interface {
   mapping (address => mapping(uint => weekCommittment)) commitments;
 
   mapping(uint => string) imageHashes;
-  uint imageHashCount;
+  uint imageHashCount = 1;
 
   uint public startDate;
   address public owner;
@@ -133,15 +134,20 @@ contract WorkIt is ERC20Interface {
     balances[msg.sender] = balances[msg.sender] - tokens;
     emit Transfer(msg.sender, 0x0, tokens);
 
+    initializeWeekData(currentWeek());
     weekData storage data = dataPerWeek[currentWeek()];
     data.totalPeople++;
     data.totalTokens += tokens;
 
     commitment.daysCommitted = _days;
+    commitment.daysCompleted = 0;
+    commitment.tokensCommitted = tokens;
+    commitment.tokensEarned = 0;
+    commitment.tokensPaid = false;
   }
 
   function payout() public {
-    require(currentWeek() > 1);
+    require(currentWeek() > 0);
     for (uint activeWeek = currentWeek() - 1; true; activeWeek--) {
       weekCommittment storage committment = commitments[msg.sender][activeWeek];
       if (committment.tokensPaid) {
@@ -151,6 +157,7 @@ contract WorkIt is ERC20Interface {
         committment.tokensPaid = true;
         continue;
       }
+      initializeWeekData(activeWeek);
       weekData storage data = dataPerWeek[activeWeek];
       uint tokens = (data.totalTokens - data.totalTokensCompleted) / data.totalPeopleCompleted;
       balances[0x0] = balances[0x0] - tokens;
@@ -171,9 +178,14 @@ contract WorkIt is ERC20Interface {
       emit Log("You have not committed to this week yet");
       require(false);
     }
-    data.workoutProofs.push(storeImageString(proofHash));
+    if (data.workoutProofs[currentDayOfWeek()] != 0) {
+        emit Log("Proof has already been stored for this day");
+        require(false);
+    }
+    data.workoutProofs[currentDayOfWeek()] = storeImageString(proofHash);
     data.daysCompleted++;
     if (data.daysCompleted >= data.daysCommitted) {
+      initializeWeekData(currentWeek());
       weekData storage week = dataPerWeek[currentWeek()];
       week.totalPeopleCompleted++;
       week.totalTokensCompleted += data.tokensCommitted;
@@ -190,8 +202,18 @@ contract WorkIt is ERC20Interface {
   }
 
   function storeImageString(string hash) public returns (uint index) {
-      imageHashes[++imageHashCount] = hash;
-      return imageHashCount;
+    imageHashes[++imageHashCount] = hash;
+    return imageHashCount;
+  }
+
+  function initializeWeekData(uint _week) public {
+    if (dataPerWeek[_week].initialized) return;
+    weekData storage week = dataPerWeek[_week];
+    week.initialized = true;
+    week.totalTokensCompleted = 0;
+    week.totalPeopleCompleted = 0;
+    week.totalTokens = 0;
+    week.totalPeople = 0;
   }
 
   function currentDay() public view returns (uint day) {

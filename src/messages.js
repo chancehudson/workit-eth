@@ -49,5 +49,5 @@ Sending proof transaction...
 exports.proofConfirmed = (etherscanUrl: string, txId: string) => `
 Your proof has been uploaded, you can view the transaction here:
 
-https://${etherscanUrl}/tx/${txId}
+${etherscanUrl}/tx/${txId}
 `

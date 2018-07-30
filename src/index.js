@@ -50,14 +50,14 @@ bot.on('message', async (msg: Discord.Message) => {
       const weiBalance = await web3.eth.getBalance(account.address);
       const ethBalance = web3.utils.fromWei(weiBalance);
 
-      // const estimatedGas = await contract.methods.postProof(uploaded.path).estimateGas({
-      //   from: account.address
-      // });
+      const estimatedGas = await contract.methods.postProof(uploaded.path).estimateGas({
+        from: account.address
+      });
       const tx = {
         from: account.address,
         to: CONTRACT_ADDRESS,
         data: contract.methods.postProof(uploaded.path).encodeABI(),
-        gas: 300000,
+        gas: estimatedGas,
         gasPrice: web3.utils.toWei('1', 'gwei')
       };
       const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
@@ -106,9 +106,9 @@ bot.on('message', async (msg: Discord.Message) => {
     }
     if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
     const account = await getAccountForUser(msg.author);
-    // const estimatedGas = await contract.methods.commitToWeek(days, tokens).estimateGas({
-    //   from: account.address
-    // });
+    const estimatedGas = await contract.methods.commitToWeek(days, tokens).estimateGas({
+      from: account.address
+    });
     const tx = {
       from: account.address,
       to: CONTRACT_ADDRESS,
