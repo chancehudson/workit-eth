@@ -106,9 +106,9 @@ bot.on('message', async (msg: Discord.Message) => {
     }
     if (!await userHasAddress(msg.author)) return msg.reply(messages.needsAddress);
     const account = await getAccountForUser(msg.author);
-    const estimatedGas = await contract.methods.commitToWeek(days, tokens).estimateGas({
-      from: account.address
-    });
+    // const estimatedGas = await contract.methods.commitToWeek(days, tokens).estimateGas({
+    //   from: account.address
+    // });
     const tx = {
       from: account.address,
       to: CONTRACT_ADDRESS,
