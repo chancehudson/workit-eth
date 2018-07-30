@@ -15,6 +15,8 @@ contract ERC20Interface {
 contract WorkIt is ERC20Interface {
 
   // non-fixed supply ERC20 implementation
+  string public constant name = "WorkIt Token";
+  string public constant symbol = "WIT";
   uint _totalSupply = 0;
   mapping(address => uint) balances;
   mapping(address => mapping(address => uint)) allowances;
