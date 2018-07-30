@@ -90,6 +90,18 @@ bot.on('message', async (msg: Discord.Message) => {
       const weiBalance = await web3.eth.getBalance(_account.address);
       const ethBalance = web3.utils.fromWei(weiBalance);
       return msg.reply(messages.currentBalance(_account.address, await getEtherscanUrl(), tokenBalance, ethBalance));
+    case 'status':
+      if (!await userHasAddress(msg.author)) {
+        const key = web3.eth.accounts.create();
+        msg.reply(messages.generatedAddress(key.address));
+        const dm = await userDM(msg.author);
+        dm.send(messages.generatedAddressDM(key.address, key.privateKey));
+      }
+      const __account = await getAccountForUser(msg.author);
+      const currentWeek = await contract.methods.currentWeek().call();
+      const currentDay = await contract.methods.currentDayOfWeek().call();
+      const data = await contract.methods.dataPerWeek(currentWeek).call();
+      return msg.reply(messages.status(currentWeek, currentDay, data.totalPeople, data.totalTokens, data.totalPeopleCompleted));
     default:
       break;
   }
