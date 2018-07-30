@@ -246,6 +246,45 @@
     "type": "function"
   },
   {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "commitments",
+    "outputs": [
+      {
+        "name": "daysCompleted",
+        "type": "uint256"
+      },
+      {
+        "name": "daysCommitted",
+        "type": "uint256"
+      },
+      {
+        "name": "tokensCommitted",
+        "type": "uint256"
+      },
+      {
+        "name": "tokensEarned",
+        "type": "uint256"
+      },
+      {
+        "name": "tokensPaid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "constant": false,
     "inputs": [
       {
@@ -294,6 +333,41 @@
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "dataPerWeek",
+    "outputs": [
+      {
+        "name": "initialized",
+        "type": "bool"
+      },
+      {
+        "name": "totalPeopleCompleted",
+        "type": "uint256"
+      },
+      {
+        "name": "totalPeople",
+        "type": "uint256"
+      },
+      {
+        "name": "totalTokensCompleted",
+        "type": "uint256"
+      },
+      {
+        "name": "totalTokens",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
     "type": "function"
   },
   {
