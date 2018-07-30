@@ -78,8 +78,8 @@ contract WorkIt is ERC20Interface {
   uint secondsPerDay = 86400;
   uint daysPerWeek = 7;
 
-  mapping(uint => WeekData) dataPerWeek;
-  mapping (address => mapping(uint => WeekCommittment)) commitments;
+  mapping(uint => WeekData) public dataPerWeek;
+  mapping (address => mapping(uint => WeekCommittment)) public commitments;
 
   mapping(uint => string) imageHashes;
   uint imageHashCount = 1;
