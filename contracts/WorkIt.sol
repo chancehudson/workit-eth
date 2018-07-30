@@ -14,22 +14,28 @@ contract ERC20Interface {
 
 contract WorkIt is ERC20Interface {
 
+    struct weekCommittment {
+      uint daysCompleted;
+      uint daysCommited;
+      string[] workoutProofs;
+      uint tokensCommitted;
+      uint tokensEarned;
+      bool tokensPaid;
+    }
+
+    struct weekData {
+      uint totalPeopleCompleted;
+      uint totalPeople;
+      uint totalTokensCompleted;
+      uint totalTokens;
+    }
+
     uint weiPerToken = 1000000000000000; // 1000 WITs per eth
     uint secondsPerDay = 86400;
     uint daysPerWeek = 7;
-    mapping(address => uint) registeredDaysPerWeek;
-    mapping(address => uint) lastProofSubmissionDay;
-    mapping(address => mapping(uint => string)) workoutProof;
-    mapping(address => mapping(uint => uint)) daysWorkedOutPerWeek;
 
-    mapping(uint => uint) totalPeopleCompletedPerWeek;
-    mapping(uint => uint) totalPeopleCommittedPerWeek;
-    mapping(uint => uint) totalTokensCommittedPerWeek;
-    mapping(uint => uint) totalTokensCompletedPerWeek;
-    mapping(address => mapping(uint => uint)) tokensCommittedPerWeek;
-    mapping(address => mapping(uint => uint)) tokensWonPerWeek;
-
-    mapping(address => uint) lastWeekPaidOut;
+    mapping(uint => weekData) dataPerWeek;
+    mapping (address => mapping(uint => weekCommittment)) commitments;
 
     uint startDate;
     address owner;
@@ -39,52 +45,79 @@ contract WorkIt is ERC20Interface {
         startDate = block.timestamp;
     }
 
+    event Log(string message);
+
     // Commit to exercising this week
-    function commitToWeek(uint tokens) public {
+    function commitToWeek(uint tokens, uint _days) public {
         // Need at least 10 tokens to participate
-        require(balances[msg.sender] >= tokens && tokens >= 10);
-        require(tokensCommittedPerWeek[msg.sender][currentWeek()] == 0);
-        require(registeredDaysPerWeek[msg.sender] <= daysPerWeek - currentDayOfWeek());
+        if (balances[msg.sender] < tokens || tokens < 10) {
+          emit Log("You need to bet at least 10 tokens to commit");
+          require(false);
+        }
+        if (_days == 0) {
+            emit Log("You cannot register for 0 days of activity");
+            require(false);
+        }
+        if (_days > daysPerWeek) {
+            emit Log("You cannot register for more than 7 days per week");
+            require(false);
+        }
+
+        weekCommittment storage commitment = commitments[msg.sender][currentWeek()];
+
+        if (commitment.tokensCommitted != 0) {
+          emit Log("You have already committed to this week");
+          require(false);
+        }
+        if (commitment.daysCommited <= daysPerWeek - currentDayOfWeek()) {
+          emit Log("It is too late in the week for you to register");
+          require(false);
+        }
         balances[0x0] = balances[0x0] + tokens;
         balances[msg.sender] = balances[msg.sender] - tokens;
         emit Transfer(msg.sender, 0x0, tokens);
-        tokensCommittedPerWeek[msg.sender][currentWeek()] = tokens;
-        totalPeopleCommittedPerWeek[currentWeek()]++;
-        totalTokensCommittedPerWeek[currentWeek()] += tokens;
-    }
 
-    // Purchase tokens and set workout threshold
-    function register(uint _daysPerWeek) public payable {
-        require(_daysPerWeek > 0 && _daysPerWeek <= 7);
-        require(msg.value > weiPerToken);
-        registeredDaysPerWeek[msg.sender] = _daysPerWeek;
-        uint tokens = msg.value / weiPerToken;
-        balances[msg.sender] = balances[msg.sender] + tokens;
-        _totalSupply += tokens;
+        weekData storage data = dataPerWeek[currentWeek()];
+        data.totalPeople++;
+        data.totalTokens += tokens;
+
+
+        commitment.daysCommited = _days;
     }
 
     function payout() public {
-        require(currentWeek() > lastWeekPaidOut[msg.sender]);
-        for (uint activeWeek = lastWeekPaidOut[msg.sender]; activeWeek < (currentWeek() - 1); activeWeek++) {
-            if (daysWorkedOutPerWeek[msg.sender][activeWeek] < registeredDaysPerWeek[msg.sender]) {
-                lastWeekPaidOut[msg.sender] = activeWeek;
+        require(currentWeek() > 1);
+        for (uint activeWeek = currentWeek() - 1; true; activeWeek--) {
+            weekCommittment storage committment = commitments[msg.sender][activeWeek];
+            if (committment.tokensPaid) {
+                break;
+            }
+            if (committment.daysCompleted < committment.daysCommited) {
+                committment.tokensPaid = true;
                 continue;
             }
-            uint tokens = totalTokensCommittedPerWeek[activeWeek] - totalTokensCompletedPerWeek[activeWeek] / totalPeopleCompletedPerWeek[activeWeek];
+            weekData storage data = dataPerWeek[activeWeek];
+            uint tokens = (data.totalTokens - data.totalTokensCompleted) / data.totalPeopleCompleted;
             balances[0x0] = balances[0x0] - tokens;
             balances[msg.sender] = balances[msg.sender] + tokens;
-            lastWeekPaidOut[msg.sender] = activeWeek;
+            emit Transfer(0x0, msg.sender, tokens);
+            committment.tokensEarned = tokens;
+            committment.tokensPaid = true;
         }
     }
 
     function postProof(string proofUrl) public {
-        require(lastProofSubmissionDay[msg.sender] < currentDay());
-        workoutProof[msg.sender][currentDay()] = proofUrl;
-        daysWorkedOutPerWeek[msg.sender][currentWeek()] += 1;
-        lastProofSubmissionDay[msg.sender] = currentDay();
-        if (daysWorkedOutPerWeek[msg.sender][currentWeek()] >= registeredDaysPerWeek[msg.sender]) {
-            totalPeopleCompletedPerWeek[currentWeek()]++;
-            totalTokensCompletedPerWeek[currentWeek()] += tokensCommittedPerWeek[msg.sender][currentWeek()];
+        weekCommittment storage data = commitments[msg.sender][currentWeek()];
+        if (data.daysCompleted >= currentDayOfWeek()) {
+            emit Log("You have already uploaded proof for today");
+            require(false);
+        }
+        data.workoutProofs.push(proofUrl);
+        data.daysCompleted++;
+        if (data.daysCompleted >= data.daysCommited) {
+            weekData storage week = dataPerWeek[currentWeek()];
+            week.totalPeopleCompleted++;
+            week.totalTokensCompleted += data.tokensCommitted;
         }
     }
 
