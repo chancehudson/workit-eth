@@ -57,6 +57,8 @@ contract WorkIt is ERC20Interface {
     return true;
   }
 
+  // End ERC-20 implementation
+
   struct WeekCommittment {
     uint daysCompleted;
     uint daysCommitted;
