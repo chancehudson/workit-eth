@@ -84,7 +84,7 @@ contract WorkIt is ERC20Interface {
   mapping (address => mapping(uint => WeekCommittment)) public commitments;
 
   mapping(uint => string) imageHashes;
-  uint imageHashCount = 1;
+  uint imageHashCount;
 
   uint public startDate;
   address public owner;
