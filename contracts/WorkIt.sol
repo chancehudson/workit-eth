@@ -181,8 +181,8 @@ contract WorkIt is ERC20Interface {
       require(false);
     }
     if (data.workoutProofs[currentDayOfWeek()] != 0) {
-        emit Log("Proof has already been stored for this day");
-        require(false);
+      emit Log("Proof has already been stored for this day");
+      require(false);
     }
     data.workoutProofs[currentDayOfWeek()] = storeImageString(proofHash);
     data.daysCompleted++;
