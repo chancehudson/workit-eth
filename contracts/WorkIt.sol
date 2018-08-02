@@ -96,10 +96,12 @@ contract WorkIt is ERC20Interface {
 
   event Log(string message);
 
+  // Fallback function executed when ethereum is received with no function call
   function () public payable {
     buyTokens(msg.value / weiPerToken);
   }
 
+  // Buy tokens
   function buyTokens(uint tokens) public payable {
     require(msg.value >= tokens * weiPerToken);
     balances[msg.sender] += tokens;
@@ -148,6 +150,7 @@ contract WorkIt is ERC20Interface {
     commitment.tokensPaid = false;
   }
 
+  // Payout your available balance based on your activity in previous weeks
   function payout() public {
     require(currentWeek() > 0);
     for (uint activeWeek = currentWeek() - 1; true; activeWeek--) {
@@ -170,6 +173,8 @@ contract WorkIt is ERC20Interface {
     }
   }
 
+  // Post image data to the blockchain and log completion
+  // TODO: If not committed for this week use last weeks tokens and days (if it exists)
   function postProof(string proofHash) public {
     WeekCommittment storage data = commitments[msg.sender][currentWeek()];
     if (data.daysCompleted > currentDayOfWeek()) {
@@ -194,6 +199,7 @@ contract WorkIt is ERC20Interface {
     }
   }
 
+  // Withdraw tokens to eth
   function withdraw(uint tokens) public returns (bool success) {
     require(balances[msg.sender] >= tokens);
     uint weiToSend = tokens * weiPerToken;
@@ -203,11 +209,13 @@ contract WorkIt is ERC20Interface {
     return msg.sender.send(tokens * weiPerToken);
   }
 
+  // Store an image string and get back a numerical identifier
   function storeImageString(string hash) public returns (uint index) {
     imageHashes[++imageHashCount] = hash;
     return imageHashCount;
   }
 
+  // Initialize a week data struct
   function initializeWeekData(uint _week) public {
     if (dataPerWeek[_week].initialized) return;
     WeekData storage week = dataPerWeek[_week];
@@ -218,14 +226,17 @@ contract WorkIt is ERC20Interface {
     week.totalPeople = 0;
   }
 
+  // Get the current day (from contract creation)
   function currentDay() public view returns (uint day) {
     return (block.timestamp - startDate) / secondsPerDay;
   }
 
+  // Get the current week (from contract creation)
   function currentWeek() public view returns (uint week) {
     return currentDay() / daysPerWeek;
   }
 
+  // Get current relative day of week (0-6)
   function currentDayOfWeek() public view returns (uint dayIndex) {
     // Uses the floor to calculate offset
     return currentDay() - (currentWeek() * daysPerWeek);
