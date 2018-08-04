@@ -72,12 +72,15 @@ contract WorkIt is ERC20Interface {
     bool initialized;
     uint totalPeopleCompleted;
     uint totalPeople;
+    uint totalDaysCommitted;
+    uint totalDaysCompleted;
     uint totalTokensCompleted;
     uint totalTokens;
   }
 
   uint public weiPerToken = 1000000000000000; // 1000 WITs per eth
-  uint secondsPerDay = 86400;
+  /* uint secondsPerDay = 86400; */
+  uint secondsPerDay = 10;
   uint daysPerWeek = 7;
 
   mapping(uint => WeekData) public dataPerWeek;
@@ -142,6 +145,7 @@ contract WorkIt is ERC20Interface {
     WeekData storage data = dataPerWeek[currentWeek()];
     data.totalPeople++;
     data.totalTokens += tokens;
+    data.totalDaysCommitted += _days;
 
     commitment.daysCommitted = _days;
     commitment.daysCompleted = 0;
@@ -158,44 +162,68 @@ contract WorkIt is ERC20Interface {
       if (committment.tokensPaid) {
         break;
       }
-      if (committment.daysCompleted < committment.daysCommitted) {
+      if (committment.daysCommitted == 0) {
         committment.tokensPaid = true;
+        // Handle edge case and avoid -1
+        if (activeWeek == 0) break;
         continue;
       }
       initializeWeekData(activeWeek);
-      WeekData storage data = dataPerWeek[activeWeek];
-      uint tokens = (data.totalTokens - data.totalTokensCompleted) / data.totalPeopleCompleted;
-      balances[0x0] = balances[0x0] - tokens;
-      balances[msg.sender] = balances[msg.sender] + tokens;
-      emit Transfer(0x0, msg.sender, tokens);
-      committment.tokensEarned = tokens;
+      WeekData storage week = dataPerWeek[activeWeek];
+      uint tokensFromPool = 0;
+      if (week.totalPeopleCompleted == 0) {
+        tokensFromPool = (week.totalTokens - week.totalTokensCompleted) / week.totalPeople;
+      } else if (committment.daysCompleted == committment.daysCommitted) {
+        tokensFromPool = (week.totalTokens - week.totalTokensCompleted) / week.totalPeopleCompleted;
+      }
+      uint tokens = committment.tokensCommitted * committment.daysCompleted / committment.daysCommitted;
+      uint totalTokens = tokensFromPool + tokens;
+      if (totalTokens == 0) {
+        committment.tokensPaid = true;
+        // Handle edge case and avoid -1
+        if (activeWeek == 0) break;
+        continue;
+      }
+      balances[0x0] = balances[0x0] - totalTokens;
+      balances[msg.sender] = balances[msg.sender] + totalTokens;
+      emit Transfer(0x0, msg.sender, totalTokens);
+      committment.tokensEarned = totalTokens;
       committment.tokensPaid = true;
+
+      // Handle edge case and avoid -1
+      if (activeWeek == 0) break;
     }
   }
 
   // Post image data to the blockchain and log completion
   // TODO: If not committed for this week use last weeks tokens and days (if it exists)
   function postProof(string proofHash) public {
-    WeekCommittment storage data = commitments[msg.sender][currentWeek()];
-    if (data.daysCompleted > currentDayOfWeek()) {
+    WeekCommittment storage committment = commitments[msg.sender][currentWeek()];
+    if (committment.daysCompleted > currentDayOfWeek()) {
       emit Log("You have already uploaded proof for today");
       require(false);
     }
-    if (data.tokensCommitted == 0) {
+    if (committment.tokensCommitted == 0) {
       emit Log("You have not committed to this week yet");
       require(false);
     }
-    if (data.workoutProofs[currentDayOfWeek()] != 0) {
+    if (committment.workoutProofs[currentDayOfWeek()] != 0) {
       emit Log("Proof has already been stored for this day");
       require(false);
     }
-    data.workoutProofs[currentDayOfWeek()] = storeImageString(proofHash);
-    data.daysCompleted++;
-    if (data.daysCompleted >= data.daysCommitted) {
-      initializeWeekData(currentWeek());
-      WeekData storage week = dataPerWeek[currentWeek()];
+    if (committment.daysCompleted >= committment.daysCommitted) {
+      // Don't allow us to go over our committed days
+      return;
+    }
+    committment.workoutProofs[currentDayOfWeek()] = storeImageString(proofHash);
+    committment.daysCompleted++;
+
+    initializeWeekData(currentWeek());
+    WeekData storage week = dataPerWeek[currentWeek()];
+    week.totalDaysCompleted++;
+    week.totalTokensCompleted = week.totalTokens * week.totalDaysCompleted / week.totalDaysCommitted;
+    if (committment.daysCompleted >= committment.daysCommitted) {
       week.totalPeopleCompleted++;
-      week.totalTokensCompleted += data.tokensCommitted;
     }
   }
 
@@ -224,6 +252,8 @@ contract WorkIt is ERC20Interface {
     week.totalPeopleCompleted = 0;
     week.totalTokens = 0;
     week.totalPeople = 0;
+    week.totalDaysCommitted = 0;
+    week.totalDaysCompleted = 0;
   }
 
   // Get the current day (from contract creation)
