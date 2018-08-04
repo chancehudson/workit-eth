@@ -79,8 +79,7 @@ contract WorkIt is ERC20Interface {
   }
 
   uint public weiPerToken = 1000000000000000; // 1000 WITs per eth
-  /* uint secondsPerDay = 86400; */
-  uint secondsPerDay = 10;
+  uint secondsPerDay = 86400;
   uint daysPerWeek = 7;
 
   mapping(uint => WeekData) public dataPerWeek;
