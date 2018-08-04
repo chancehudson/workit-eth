@@ -171,12 +171,13 @@ contract WorkIt is ERC20Interface {
       initializeWeekData(activeWeek);
       WeekData storage week = dataPerWeek[activeWeek];
       uint tokensFromPool = 0;
+      uint tokens = committment.tokensCommitted * committment.daysCompleted / committment.daysCommitted;
       if (week.totalPeopleCompleted == 0) {
         tokensFromPool = (week.totalTokens - week.totalTokensCompleted) / week.totalPeople;
+        tokens = 0;
       } else if (committment.daysCompleted == committment.daysCommitted) {
         tokensFromPool = (week.totalTokens - week.totalTokensCompleted) / week.totalPeopleCompleted;
       }
-      uint tokens = committment.tokensCommitted * committment.daysCompleted / committment.daysCommitted;
       uint totalTokens = tokensFromPool + tokens;
       if (totalTokens == 0) {
         committment.tokensPaid = true;
