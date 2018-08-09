@@ -25,7 +25,7 @@ const contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
 // });
 
 const messages = require('./messages');
-const TOTAL_GAS = 150000;
+const TOTAL_GAS = 300000;
 const GAS_PRICE = web3.utils.toWei('45', 'gwei');
 
 bot.on('ready', () => {
