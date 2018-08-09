@@ -93,7 +93,8 @@ contract WorkIt is ERC20Interface {
 
   constructor() public {
     owner = msg.sender;
-    startDate = block.timestamp;
+    // Round down to the nearest day at 00:00Z (UTC -6)
+    startDate = (block.timestamp / secondsPerDay) * secondsPerDay - 60 * 6;
   }
 
   event Log(string message);
