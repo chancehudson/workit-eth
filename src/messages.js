@@ -19,6 +19,8 @@ Usage:
   buy (amount) tokens : Buy a certain nuber of WorkIt tokens
     Example use: "buy 10 tokens"
     Buys 10 tokens at 0.001 eth per token (0.01 eth total cost)
+
+  Image uploads : Upload an image and tag the WorkIt bot
 `;
 
 exports.generatedAddress = (address: string) => `
