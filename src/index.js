@@ -25,7 +25,8 @@ const contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
 // });
 
 const messages = require('./messages');
-const GAS_PRICE = web3.utils.toWei('50', 'gwei');
+const TOTAL_GAS = 150000;
+const GAS_PRICE = web3.utils.toWei('45', 'gwei');
 
 bot.on('ready', () => {
   console.log(`Logged in as ${bot.user.tag}!`);
@@ -126,7 +127,7 @@ bot.on('message', async (msg: Discord.Message) => {
       from: account.address,
       to: CONTRACT_ADDRESS,
       data: contract.methods.commitToWeek(tokens, days).encodeABI(),
-      gas: 300000,
+      gas: TOTAL_GAS,
       gasPrice: GAS_PRICE
     };
     const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
