@@ -15,6 +15,10 @@ Usage:
   register (days) (ether) : Register to work it for a certain number of days per week using a certain amount of ethereum.
     Example use: "register 5 0.5"
     Registers for 5 days of exercise per week with 0.5 ether
+
+  buy (amount) tokens : Buy a certain nuber of WorkIt tokens
+    Example use: "buy 10 tokens"
+    Buys 10 tokens at 0.001 eth per token (0.01 eth total cost)
 `;
 
 exports.generatedAddress = (address: string) => `
